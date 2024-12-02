@@ -6,15 +6,15 @@
 /*   By: lserodon <lserodon@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/11/22 10:35:43 by lserodon          #+#    #+#             */
-/*   Updated: 2024/11/29 20:10:43 by lserodon         ###   ########.fr       */
+/*   Updated: 2024/12/02 15:19:22 by lserodon         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "ft_printf.h"
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <limits.h>
 
 int	ft_strlen(char *str)
 {
@@ -37,6 +37,8 @@ int	ft_printstr(char *str)
 	int	i;
 
 	i = 0;
+	if (!str)
+		return (write(1, "(null)", 6));
 	while (str[i])
 	{
 		write(1, &str[i], 1);
@@ -63,11 +65,27 @@ int	ft_printnbr_base(long int nb, char *base, int base_size)
 	return (len);
 }
 
+int	ft_printnbr_p(unsigned long int nb, char *base, unsigned long int base_size)
+{
+	unsigned long int	len;
+
+	len = 0;
+	if (nb < 0)
+	{
+		len += (int)write(1, "-", 1);
+		nb = -nb;
+	}
+	if (nb > base_size - 1)
+	{
+		len += (int)ft_printnbr_p(nb / base_size, base, base_size);
+	}
+	len += (int)ft_printchar(base[nb % base_size]);
+	return (len);
+}
 
 int	sort_format(const char format, va_list args)
 {
 	int	len;
-	long int p;
 
 	len = 0;
 	if (format == 'c')
@@ -76,17 +94,9 @@ int	sort_format(const char format, va_list args)
 		len += ft_printstr(va_arg(args, char *));
 	if (format == 'p')
 	{
-		p = va_arg(args, long int);
-		if (p == 0)
-		{
-			len += write(1, "(nil)", 5);
-			return (len);
-		}
-		else
-		{
-			len += ft_printstr("0x");
-			len += ft_printnbr_base(p, "0123456789abcdef", 16);
-		}
+		len += ft_printstr("0x");
+		len += ft_printnbr_p(va_arg(args, unsigned long int),
+				"0123456789abcdef", 16);
 	}
 	if ((format == 'd') || (format == 'i'))
 		len += ft_printnbr_base(va_arg(args, int), "0123456789", 10);
@@ -118,7 +128,7 @@ int	ft_printf(const char *format, ...)
 		{
 			i++;
 			if (!format[i])
-				return(0);
+				return (0);
 			len += sort_format(format[i], args);
 		}
 		else
@@ -129,7 +139,7 @@ int	ft_printf(const char *format, ...)
 	return (len);
 }
 // int	main(void)
-// {
-// 	ft_printf("%p\n",LONG_MIN);
-// 	printf("%p", LONG_MIN);
-// }
+//  {
+// 	ft_printf("%p\n", 0);
+// 	printf("%p", 0);
+//  }
